@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>O Relógio da Semana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0D12;
+    --panel:#14171F;
+    --panel2:#1B1F29;
+    --panel3:#232837;
+    --line:#262B38;
+    --text:#EDEEF2;
+    --muted:#8A8F9C;
+    --accent:#FF1F6D;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(61,107,255,0.18), transparent 45%),
+      radial-gradient(circle at 85% 10%, rgba(255,31,109,0.14), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(0,245,160,0.08), transparent 50%),
+      var(--ink);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:56px 32px 90px;
+  }
+  .wrap{max-width:1180px; margin:0 auto;}
+  input, select, button{ font-family:'Inter',sans-serif; }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em;
+    color:var(--muted); text-transform:uppercase; margin-bottom:14px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:8px; height:8px; border-radius:50%; background:#00F5A0; box-shadow:0 0 10px #00F5A0; }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:clamp(30px,4.6vw,52px); line-height:1.05; letter-spacing:-0.01em; max-width:820px;
+  }
+  h1 span{ color:var(--accent); }
+  .lede{ margin-top:14px; color:var(--muted); font-size:15px; max-width:580px; line-height:1.55; }
+
+  /* ---------- Editor ---------- */
+  .editor{
+    margin-top:44px; background:var(--panel); border:1px solid var(--line);
+    border-radius:18px; padding:26px 28px;
+  }
+  .editor-head{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+  .card-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .name-field{ display:flex; align-items:center; gap:10px; }
+  .name-field label{ font-size:12.5px; color:var(--muted); }
+  .name-field input{
+    background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    border-radius:9px; padding:8px 12px; font-size:14px; width:180px;
+  }
+
+  .days-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .day-chip{
+    padding:7px 14px; border-radius:999px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--muted); font-size:12.5px; cursor:pointer;
+    user-select:none; transition:all .15s ease;
+  }
+  .day-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  .form-grid{
+    display:grid; grid-template-columns:1fr 1fr 1fr 1.6fr auto; gap:10px; align-items:end;
+  }
+  @media (max-width:900px){ .form-grid{grid-template-columns:1fr 1fr; } }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-size:11.5px; color:var(--muted); }
+  .field input, .field select{
+    background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    border-radius:9px; padding:9px 10px; font-size:13.5px;
+  }
+  .field input[type="color"]{ padding:3px; height:36px; cursor:pointer; }
+  .btn{
+    border:none; border-radius:9px; padding:10px 16px; font-size:13.5px; font-weight:600;
+    cursor:pointer; transition:transform .15s ease, opacity .15s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-ghost{ background:var(--panel3); color:var(--text); }
+  .btn-outline{ background:transparent; border:1px solid var(--line); color:var(--muted); }
+
+  .new-activity{
+    margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);
+    display:none; grid-template-columns:1.4fr 0.8fr 0.8fr auto; gap:10px; align-items:end;
+  }
+  .new-activity.show{ display:grid; }
+  @media (max-width:900px){ .new-activity{grid-template-columns:1fr 1fr;} }
+  .toggle-new{ font-size:12px; color:var(--accent); background:none; border:none; cursor:pointer; margin-top:10px; padding:0; }
+
+  .blocks-list{ margin-top:22px; display:flex; flex-direction:column; gap:8px; }
+  .blocks-list .day-group-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.1em; margin:14px 0 6px;
+  }
+  .blk-row{
+    display:grid; grid-template-columns:110px 22px 1fr auto; align-items:center; gap:12px;
+    padding:9px 14px; border-radius:10px; background:var(--panel2); border-left:3px solid transparent;
+  }
+  .blk-row .time{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); }
+  .blk-row .rm{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; }
+  .blk-row .rm:hover{ color:var(--accent); }
+
+  .editor-actions{ margin-top:24px; display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- Clock grid ---------- */
+  .clocks{ margin-top:44px; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:18px; }
+  .day-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:20px 14px 18px; display:flex; flex-direction:column; align-items:center;
+    cursor:pointer; transition:transform .25s ease, border-color .25s ease, background .25s ease;
+  }
+  .day-card:hover{ transform:translateY(-4px); border-color:#3A4256; }
+  .day-card.active{
+    background:var(--panel2); border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent), 0 12px 28px -12px rgba(255,31,109,.35);
+  }
+  .day-card svg{ width:100%; height:auto; display:block; }
+  .day-center-label{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; fill:var(--text); }
+  .day-center-sub{ font-family:'JetBrains Mono',monospace; font-size:10.5px; fill:var(--muted); }
+  .day-name{ margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .day-card.active .day-name{ color:var(--accent); }
+  .empty-note{ color:var(--muted); font-size:13.5px; padding:20px 4px; }
+
+  /* ---------- Detail panel ---------- */
+  .panel{
+    margin-top:20px; background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:30px 34px; display:grid; grid-template-columns:180px 1fr; gap:28px; align-items:start;
+  }
+  @media (max-width:640px){ .panel{grid-template-columns:1fr; gap:16px;} }
+  .panel-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:24px; }
+  .panel-sub{ margin-top:6px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); }
+  .blocks{ display:flex; flex-direction:column; gap:9px; }
+  .block{
+    display:grid; grid-template-columns:110px 22px 1fr; align-items:center; gap:12px;
+    padding:10px 14px; border-radius:10px; background:var(--panel2); border-left:3px solid transparent;
+  }
+  .block .time{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); }
+  .block .icon{ font-size:15px; text-align:center; }
+  .block .label{ font-size:14px; font-weight:500; }
+
+  /* ---------- Legend + stats ---------- */
+  .footer-row{ margin-top:20px; display:grid; grid-template-columns:1.1fr 1.6fr; gap:18px; }
+  @media (max-width:820px){ .footer-row{grid-template-columns:1fr;} }
+  .legend, .stats{ background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:22px 24px; }
+  .legend-list{ display:flex; flex-direction:column; gap:11px; }
+  .legend-item{ display:flex; align-items:center; gap:10px; font-size:13.5px; }
+  .dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:460px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+  .stat{ background:var(--panel2); border-radius:12px; padding:14px 12px; border-top:2px solid var(--line); }
+  .stat .num{ font-family:'JetBrains Mono',monospace; font-weight:500; font-size:22px; }
+  .stat .lab{ margin-top:4px; font-size:11.5px; color:var(--muted); }
+
+  .footnote{ margin-top:28px; text-align:center; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow" id="eyebrow">modelo de rotina · edite e crie a sua</div>
+  <h1 id="heading"><span id="headingPrefix">O relógio da sua semana</span></h1>
+  <p class="lede">Cinco dias, um mostrador cada. Edite os horários abaixo para montar a sua própria rotina — depois é só baixar o seu arquivo.</p>
+
+  <!-- ===================== EDITOR ===================== -->
+  <div class="editor">
+    <div class="editor-head">
+      <div class="card-title">Monte sua rotina</div>
+      <div class="name-field">
+        <label for="nameInput">Nome</label>
+        <input type="text" id="nameInput" placeholder="Seu nome" value="">
+      </div>
+    </div>
+
+    <div class="days-row" id="daysRow"></div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Dia</label>
+        <select id="fDay"></select>
+      </div>
+      <div class="field">
+        <label>Início</label>
+        <input type="time" id="fStart" value="07:00">
+      </div>
+      <div class="field">
+        <label>Fim</label>
+        <input type="time" id="fEnd" value="09:00">
+      </div>
+      <div class="field">
+        <label>Atividade</label>
+        <select id="fActivity"></select>
+      </div>
+      <button class="btn btn-primary" id="addBlockBtn">+ Adicionar</button>
+    </div>
+
+    <button class="toggle-new" id="toggleNewActivity">+ criar nova atividade (com cor própria)</button>
+    <div class="new-activity" id="newActivityForm">
+      <div class="field"><label>Nome da atividade</label><input type="text" id="naLabel" placeholder="Ex: Estágio"></div>
+      <div class="field"><label>Ícone (emoji)</label><input type="text" id="naIcon" placeholder="⭐" maxlength="4"></div>
+      <div class="field"><label>Cor</label><input type="color" id="naColor" value="#4C9AFF"></div>
+      <button class="btn btn-ghost" id="createActivityBtn">Criar atividade</button>
+    </div>
+
+    <div class="blocks-list" id="blocksList"></div>
+
+    <div class="editor-actions">
+      <button class="btn btn-outline" id="clearBtn">Limpar tudo e começar do zero</button>
+      <button class="btn btn-primary" id="downloadBtn">⬇ Baixar minha rotina (.html)</button>
+    </div>
+  </div>
+
+  <!-- ===================== CLOCKS ===================== -->
+  <div class="clocks" id="clocks"></div>
+
+  <div class="panel" id="panel" style="display:none">
+    <div>
+      <div class="panel-title" id="panelDay">Segunda</div>
+      <div class="panel-sub" id="panelSub"></div>
+    </div>
+    <div class="blocks" id="panelBlocks"></div>
+  </div>
+
+  <div class="footer-row">
+    <div class="legend">
+      <div class="card-title">Legenda</div>
+      <div class="legend-list" id="legend"></div>
+    </div>
+    <div class="stats">
+      <div class="card-title">Total na semana</div>
+      <div class="stat-grid" id="statGrid"></div>
+    </div>
+  </div>
+
+  <p class="footnote">Feito para compartilhar — baixe e mande esse arquivo pra quem quiser montar a própria rotina.</p>
+</div>
+
+<script>
+/* ============================================================
+   STATE — tudo que define a rotina fica aqui. Ao baixar, este
+   objeto é serializado de volta dentro do arquivo exportado.
+   ============================================================ */
+let STATE = {
+  name: '',
+  enabledDays: ['Segunda','Terça','Quarta','Quinta','Sexta'],
+  activities: {
+    trabalho: { label:'Trabalho', color:'#3D6BFF', icon:'💼' },
+    aula:     { label:'Aula (Faculdade)', color:'#A742FF', icon:'🎓' },
+    academia: { label:'Academia', color:'#00F5A0', icon:'🏋️' },
+    almoco:   { label:'Almoço', color:'#FFB300', icon:'🍽️' },
+    livre:    { label:'Livre', color:'#3A4256', icon:'🌙' },
+  },
+  schedule: {
+    Segunda: [], Terça: [], Quarta: [], Quinta: [], Sexta: [], Sábado: [], Domingo: [],
+  }
+};
+
+const ALL_DAYS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+let activeDay = null;
+
+function toMinutes(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+function polar(cx,cy,r,angleDeg){ const rad=(angleDeg-90)*Math.PI/180; return {x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad)}; }
+function arcPath(cx,cy,r,a1,a2){
+  const s=polar(cx,cy,r,a2), e=polar(cx,cy,r,a1);
+  const large = a2-a1 <= 180 ? 0 : 1;
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y}`;
+}
+function slugify(str){
+  return (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'atividade';
+}
+
+// fills 00:00-24:00 with 'livre' in the gaps
+function fullDay(day){
+  const blocks = (STATE.schedule[day]||[]).slice().sort((a,b)=>toMinutes(a[0])-toMinutes(b[0]));
+  const out = []; let cursor = 0;
+  blocks.forEach(([s,e,act])=>{
+    if (toMinutes(s) > cursor) out.push([minToTime(cursor), s, 'livre']);
+    out.push([s,e,act]);
+    cursor = toMinutes(e);
+  });
+  if (cursor < 1440) out.push([minToTime(cursor), '24:00', 'livre']);
+  return out;
+}
+function minToTime(m){ const h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+
+function occupiedHours(day){
+  return (STATE.schedule[day]||[]).reduce((sum,[s,e])=> sum + (toMinutes(e)-toMinutes(s))/60, 0);
+}
+
+function buildClockSVG(day){
+  const cx=100, cy=100, r=78, sw=18;
+  let arcs='';
+  fullDay(day).forEach(([s,e,actKey])=>{
+    const a1=toMinutes(s)/1440*360, a2=toMinutes(e)/1440*360;
+    const color = (STATE.activities[actKey]||STATE.activities.livre).color;
+    arcs += `<path d="${arcPath(cx,cy,r,a1,a2)}" fill="none" stroke="${color}" stroke-width="${sw}" class="seg"/>`;
+  });
+  let ticks='';
+  for(let h=0; h<24; h+=3){
+    const a=h/24*360, p1=polar(cx,cy,r+13,a), p2=polar(cx,cy,r+17,a);
+    ticks += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#3A4256" stroke-width="1.5"/>`;
+  }
+  const hrs = occupiedHours(day).toFixed(1).replace('.0','');
+  return `<svg viewBox="0 0 200 200">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#20242F" stroke-width="${sw}"/>
+    ${arcs}${ticks}
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" class="day-center-label">${day.slice(0,3).toUpperCase()}</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" class="day-center-sub">${hrs}h ocupadas</text>
+  </svg>`;
+}
+
+/* ---------------- Rendering ---------------- */
+function updateHeading(){
+  const h = document.getElementById('headingPrefix');
+  h.innerHTML = STATE.name
+    ? `O relógio da semana da <span style="color:var(--accent)">${STATE.name}</span>`
+    : `O relógio da <span style="color:var(--accent)">sua</span> semana`;
+}
+
+function renderAll(){
+  updateHeading();
+  document.getElementById('nameInput').value = STATE.name;
+
+  renderDaysRow();
+  renderActivitySelect();
+  renderDaySelect();
+  renderBlocksList();
+  renderClocks();
+  renderLegend();
+  renderStats();
+}
+
+function renderDaysRow(){
+  const el = document.getElementById('daysRow');
+  el.innerHTML='';
+  ALL_DAYS.forEach(day=>{
+    const chip = document.createElement('div');
+    chip.className = 'day-chip' + (STATE.enabledDays.includes(day) ? ' on' : '');
+    chip.textContent = day;
+    chip.onclick = ()=>{
+      if (STATE.enabledDays.includes(day)) STATE.enabledDays = STATE.enabledDays.filter(d=>d!==day);
+      else STATE.enabledDays.push(day);
+      renderAll();
+    };
+    el.appendChild(chip);
+  });
+}
+
+function renderDaySelect(){
+  const sel = document.getElementById('fDay');
+  const prev = sel.value;
+  sel.innerHTML = ALL_DAYS.map(d=>`<option value="${d}">${d}</option>`).join('');
+  if (ALL_DAYS.includes(prev)) sel.value = prev;
+}
+
+function renderActivitySelect(){
+  const sel = document.getElementById('fActivity');
+  const prev = sel.value;
+  sel.innerHTML = Object.entries(STATE.activities)
+    .filter(([k])=>k!=='livre')
+    .map(([k,a])=>`<option value="${k}">${a.icon} ${a.label}</option>`).join('');
+  if (Object.keys(STATE.activities).includes(prev)) sel.value = prev;
+}
+
+function renderBlocksList(){
+  const el = document.getElementById('blocksList');
+  el.innerHTML='';
+  STATE.enabledDays.forEach(day=>{
+    const blocks = (STATE.schedule[day]||[]).slice().sort((a,b)=>toMinutes(a[0])-toMinutes(b[0]));
+    if (!blocks.length) return;
+    const lab = document.createElement('div');
+    lab.className='day-group-label';
+    lab.textContent = day;
+    el.appendChild(lab);
+    blocks.forEach(([s,e,actKey])=>{
+      const act = STATE.activities[actKey] || STATE.activities.livre;
+      const row = document.createElement('div');
+      row.className='blk-row';
+      row.style.borderLeftColor = act.color;
+      row.innerHTML = `<span class="time">${s}–${e}</span><span>${act.icon}</span><span class="label">${act.label}</span>`;
+      const rm = document.createElement('button');
+      rm.className='rm'; rm.innerHTML='✕';
+      rm.onclick = ()=>{
+        STATE.schedule[day] = STATE.schedule[day].filter(b=>!(b[0]===s&&b[1]===e&&b[2]===actKey));
+        renderAll();
+      };
+      row.appendChild(rm);
+      el.appendChild(row);
+    });
+  });
+}
+
+function renderClocks(){
+  const el = document.getElementById('clocks');
+  el.innerHTML='';
+  if (!STATE.enabledDays.length){
+    el.innerHTML = '<div class="empty-note">Selecione ao menos um dia acima para ver o relógio.</div>';
+    document.getElementById('panel').style.display='none';
+    return;
+  }
+  STATE.enabledDays.forEach(day=>{
+    const card = document.createElement('div');
+    card.className = 'day-card' + (day===activeDay ? ' active' : '');
+    card.innerHTML = buildClockSVG(day) + `<div class="day-name">${day}-feira</div>`;
+    card.onclick = ()=>{ activeDay = day; renderClocks(); showPanel(day); };
+    el.appendChild(card);
+  });
+  if (!activeDay || !STATE.enabledDays.includes(activeDay)) activeDay = STATE.enabledDays[0];
+  showPanel(activeDay);
+  animateArcs();
+}
+
+function showPanel(day){
+  document.getElementById('panel').style.display='grid';
+  document.getElementById('panelDay').textContent = day + '-feira';
+  const occ = occupiedHours(day);
+  document.getElementById('panelSub').textContent = `${occ.toFixed(1).replace('.0','')}h ocupadas · ${(24-occ).toFixed(1).replace('.0','')}h livres`;
+  const el = document.getElementById('panelBlocks');
+  el.innerHTML='';
+  const blocks = (STATE.schedule[day]||[]).slice().sort((a,b)=>toMinutes(a[0])-toMinutes(b[0]));
+  if (!blocks.length){ el.innerHTML = '<div class="empty-note">Nenhum horário cadastrado ainda para este dia.</div>'; return; }
+  blocks.forEach(([s,e,actKey])=>{
+    const act = STATE.activities[actKey] || STATE.activities.livre;
+    const row = document.createElement('div');
+    row.className='block';
+    row.style.borderLeftColor = act.color;
+    row.innerHTML = `<span class="time">${s}–${e}</span><span class="icon">${act.icon}</span><span class="label">${act.label}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function renderLegend(){
+  const el = document.getElementById('legend');
+  el.innerHTML='';
+  Object.values(STATE.activities).forEach(act=>{
+    const item = document.createElement('div');
+    item.className='legend-item';
+    item.innerHTML = `<span class="dot" style="background:${act.color}"></span>${act.icon} ${act.label}`;
+    el.appendChild(item);
+  });
+}
+
+function renderStats(){
+  const totals = {};
+  Object.keys(STATE.activities).forEach(k=>totals[k]=0);
+  STATE.enabledDays.forEach(day=> fullDay(day).forEach(([s,e,actKey])=>{
+    totals[actKey] = (totals[actKey]||0) + (toMinutes(e)-toMinutes(s))/60;
+  }));
+  const el = document.getElementById('statGrid');
+  el.innerHTML='';
+  Object.entries(STATE.activities).forEach(([k,act])=>{
+    const val = (totals[k]||0);
+    if (val<=0 && k!=='livre') return;
+    const stat = document.createElement('div');
+    stat.className='stat';
+    stat.style.borderTopColor = act.color;
+    stat.innerHTML = `<div class="num">${val.toFixed(1).replace('.0','')}h</div><div class="lab">${act.icon} ${act.label}</div>`;
+    el.appendChild(stat);
+  });
+}
+
+function animateArcs(){
+  document.querySelectorAll('.day-card').forEach((card,i)=>{
+    const paths = card.querySelectorAll('.seg');
+    paths.forEach(p=>{ const len=p.getTotalLength(); p.style.strokeDasharray=len; p.style.strokeDashoffset=len; });
+    setTimeout(()=>{
+      paths.forEach(p=>{ p.style.transition='stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)'; p.style.strokeDashoffset='0'; });
+    }, i*110);
+  });
+}
+
+/* ---------------- Editor interactions ---------------- */
+document.getElementById('nameInput').addEventListener('input', e=>{
+  STATE.name = e.target.value;
+  updateHeading();
+});
+
+document.getElementById('toggleNewActivity').addEventListener('click', ()=>{
+  document.getElementById('newActivityForm').classList.toggle('show');
+});
+
+document.getElementById('createActivityBtn').addEventListener('click', ()=>{
+  const label = document.getElementById('naLabel').value.trim();
+  const icon = document.getElementById('naIcon').value.trim() || '⭐';
+  const color = document.getElementById('naColor').value;
+  if (!label){ alert('Dê um nome para a nova atividade.'); return; }
+  let key = slugify(label);
+  let i=1; while (STATE.activities[key]) { key = slugify(label)+'_'+i; i++; }
+  STATE.activities[key] = { label, icon, color };
+  document.getElementById('naLabel').value='';
+  document.getElementById('naIcon').value='';
+  renderActivitySelect();
+  document.getElementById('fActivity').value = key;
+  renderLegend();
+});
+
+document.getElementById('addBlockBtn').addEventListener('click', ()=>{
+  const day = document.getElementById('fDay').value;
+  const start = document.getElementById('fStart').value;
+  const end = document.getElementById('fEnd').value;
+  const act = document.getElementById('fActivity').value;
+  if (!start || !end || toMinutes(start) >= toMinutes(end)){
+    alert('Verifique os horários: o início precisa ser antes do fim.');
+    return;
+  }
+  const overlap = (STATE.schedule[day]||[]).some(([s,e])=> toMinutes(start) < toMinutes(e) && toMinutes(s) < toMinutes(end));
+  if (overlap){ alert('Esse horário se sobrepõe a um bloco já existente nesse dia.'); return; }
+  if (!STATE.schedule[day]) STATE.schedule[day]=[];
+  STATE.schedule[day].push([start,end,act]);
+  if (!STATE.enabledDays.includes(day)) STATE.enabledDays.push(day);
+  activeDay = day;
+  renderAll();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if (!confirm('Isso vai apagar todos os horários cadastrados. Continuar?')) return;
+  STATE.schedule = {}; ALL_DAYS.forEach(d=>STATE.schedule[d]=[]);
+  STATE.enabledDays = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+  STATE.name = '';
+  activeDay = null;
+  renderAll();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const html = document.documentElement.outerHTML;
+  const newHtml = html.replace(/let STATE = [\s\S]*?;\n\nconst ALL_DAYS/, 'let STATE = ' + JSON.stringify(STATE) + ';\n\nconst ALL_DAYS');
+  const blob = new Blob([newHtml], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rotina-' + (slugify(STATE.name) || 'minha-semana') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+renderAll();
+</script>
+</body>
+</html>
